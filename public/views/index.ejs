@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html ng-app="VoltaPlanner">
+    <head>
+        <title>"VoltaPlanner"</title>
+        <link rel='stylesheet' href='/stylesheets/style.css' />
+        <!-- AngularJS -->
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js" ></script>
+
+        <!-- Google map API -->
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBm_IDkCpVbIR2JI5Qzs4lTmaI-YcQv1-A&libraries=places&callback=initMap"
+                async defer></script>
+        <script src="javascripts/app_controller.js" ></script>
+
+    </head>
+    <body ngController="mainController" >
+        <h1>Volta Planner</h1>
+        <form>
+            <label for="start_location">Start address:</label>
+            <input id="start_location" type="text" />
+            <br/>
+            <label for="end_location">Destination adress:</label>
+            <input id="end_location" type="text" />
+            <br/>
+            <label for="max_mileage">Maximum range of car (in miles):</label>
+            <input id="max_mileage" type="number" />
+            <br/>
+            <input type="submit" value="Find route" />
+        </form>
+        <br/>
+        <div id="map" style="height:500px"></div>
+    </body>
+</html>
