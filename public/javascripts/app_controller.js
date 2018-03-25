@@ -2,18 +2,21 @@ var app = angular.module('VoltaPlanner', []);
 
 app.controller('mainController', function($http, $scope) {
     $scope.planTrip = function() {
-        var startLocation = document.getElementById('start_location');
-        var endLocation = document.getElementById('end_location');
+        var startLocation = document.getElementById('start_location').value;
+        var endLocation = document.getElementById('end_location').value;
+        var maxRange = document.getElementById('max_mileage').value;
         var geocoder = new google.maps.Geocoder();
-        geocoder.geocode({'placeId': startLocation}, function(startCoord, status) {
+        geocoder.geocode({'address': startLocation}, function(startRaw, status) {
             if (status !== 'OK') {
                 alert('Geocode failed for the operation');
                 return;
             }
-            geocoder.geocode({'placeId': endLocation}, function(endCoord, status) {
+            var startCoord = [startRaw[0].geometry.location.lat(), startRaw[0].geometry.location.lng()];
+            geocoder.geocode({'address': endLocation}, function(endRaw, status) {
                 if(status === 'OK') {
-                    $http.get('/route?startLocation=' + startCoord + '&endLocation=' + endCoord)
-                        .success(function (res) {
+                    var endCoord = [endRaw[0].geometry.location.lat(), endRaw[0].geometry.location.lng()];
+                    $http.get('/route?startLocation=' + startCoord + '&endLocation=' + endCoord + '&range=' + maxRange)
+                        .then(function (res) {
                             var map = new google.maps.Map(document.getElementById('map'), {
                                 zoom: 3,
                                 center: {lat: 0, lng: -180},
@@ -41,16 +44,14 @@ app.controller('mainController', function($http, $scope) {
         });
     }
 });
-
 function initMap() {
-    var map = new google.maps.Map(document.getElementById('map'), {
+    new google.maps.Map(document.getElementById('map'), {
         center: {lat: 37.7749, lng: -122.4194},
         zoom: 10
     });
 
-    var timeout;
     var startInput = document.getElementById('start_location');
-    var startAutocomplete = new google.maps.places.Autocomplete(startInput, {placeIdOnly: true});
+    new google.maps.places.Autocomplete(startInput, {placeIdOnly: true});
     var endInput = document.getElementById('end_location');
-    var endAutocomplete = new google.maps.places.Autocomplete(endInput, {placeIdOnly: true});
+    new google.maps.places.Autocomplete(endInput, {placeIdOnly: true});
 }
