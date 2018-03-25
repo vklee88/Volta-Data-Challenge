@@ -1,5 +1,5 @@
 var express = require('express');
-const request = require('node-fetch');
+const fetch = require('node-fetch');
 
 const headers = {
     'Accept':'application/json'
@@ -13,11 +13,19 @@ router.get('/', function(req, res) {
 });
 
 router.get('/route', function(req, res) {
-    var startLat = req.params.startLocation[0];
-    var startLon = req.params.startLocation[1];
-    var endLat = req.params.endLocation[0];
-    var endLon = req.params.endLocation[1];
-    var maxDist = req.params.range;
+    /**
+     * @param startLocation [latitude, longitude] list of start location
+     * @param endLocation [latitude, longitude] list of destination location
+     * @param maxRange number designated
+     */
+    if (!req.query.range) {
+        res.status(400);
+    }
+    var startLat = req.query.startLocation.split(",")[0];
+    var startLon = req.query.startLocation.split(",")[1];
+    var endLat = req.query.endLocation.split(",")[0];
+    var endLon = req.query.endLocation.split(",")[1];
+    var maxDist = req.query.range;
     var toplat = startLat > endLat ? startLat : endLat + maxDist / 69;
     var bottomlat = startLat <= endLat ? startLat : endLat - maxDist / 69;
     var toplon = startLon > endLon ? startLon : endLon + maxDist / 69;
@@ -26,12 +34,12 @@ router.get('/route', function(req, res) {
         {
             method: 'GET',
             headers: headers,
-            bounding: {
+            bounding: JSON.stringify({
                 'toplat': toplat,
                 'toplon': toplon,
                 'bottomlat': bottomlat,
                 'bottomlon': bottomlon
-            },
+            }),
             query: 'a'
         })
         .then(function(response) {
@@ -40,7 +48,7 @@ router.get('/route', function(req, res) {
         .then(function(body) {
             // run greedy best first search
             var haversine = function(lat1, lat2, lon1, lon2) {
-                var R = 1 / 1.609344; // miles
+                var R = 6371e3; // miles
                 var phi_1 = lat1 * Math.PI / 180;
                 var phi_2 = lat2 * Math.PI / 180;
                 var delta_phi = (lat2-lat1) * Math.PI / 180;
@@ -51,7 +59,7 @@ router.get('/route', function(req, res) {
                     Math.sin(delta_lambda/2) * Math.sin(delta_lambda/2);
                 var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-                return R * c;
+                return R * c / 1000 / 1.609344;
             };
             var path = [];
             body.push({'name': 'destination', 'dist': -1, 'location': {'coordinates': [endLon, endLat]}});
@@ -63,13 +71,13 @@ router.get('/route', function(req, res) {
             function greedy(start) {
                 var minCoord, minHeur;
                 for (i = 0; i < body.length; i++) {
-                    var dist = haversine(start.location.coordinates[0], body[i].location.coordinates[0],
-                        start.location.coordinates[1], body[i].location.coordinates[1]);
+                    var dist = haversine(start.location.coordinates[1], body[i].location.coordinates[1],
+                        start.location.coordinates[0], body[i].location.coordinates[0]);
                     if (dist > maxDist) {
                         continue;
                     }
-                    if (!minHeur || body[i].location.dist < minHeur) {
-                        minHeur = body[i].location.dist;
+                    if (!minHeur || body[i].dist < minHeur) {
+                        minHeur = body[i].dist;
                         minCoord = body[i];
                     }
                 }
@@ -82,8 +90,8 @@ router.get('/route', function(req, res) {
             do {
                 var end = greedy(begin);
                 begin = end;
-                path.append(end);
-            } while (end.dist != -1);
+                path.push(end);
+            } while (end.dist > 0);
             res.json(JSON.stringify(path));
         });
 
