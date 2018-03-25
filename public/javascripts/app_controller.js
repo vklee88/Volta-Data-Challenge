@@ -17,24 +17,19 @@ app.controller('mainController', function($http, $scope) {
                     var endCoord = [endRaw[0].geometry.location.lat(), endRaw[0].geometry.location.lng()];
                     $http.get('/route?startLocation=' + startCoord + '&endLocation=' + endCoord + '&range=' + maxRange)
                         .then(function (res) {
+                            var locations = JSON.parse(res.data);
                             var map = new google.maps.Map(document.getElementById('map'), {
-                                zoom: 3,
+                                zoom: 10,
                                 center: {lat: 0, lng: -180},
                                 mapTypeId: 'terrain'
                             });
-
-                            var flightPlanCoordinates = res.coordList;
-                            var flightPath = new google.maps.Polyline({
-                                path: flightPlanCoordinates,
-                                geodesic: true,
-                                strokeColor: '#FF0000',
-                                strokeOpacity: 1.0,
-                                strokeWeight: 2
-                            });
-
-                            flightPath.setMap(map);
+                            var places = [['Start', startCoord[0], startCoord[1]]];
+                            for (var i = 0; i < locations.length; i++) {
+                                places.push([locations[i].name, locations[i].location.coordinates[1], locations[i].location.coordinates[0]])
+                            }
+                            setMarkersAndPath(map, places);
                         })
-                        .failure(function (err) {
+                        .catch(function (err) {
                             alert(err);
                         })
                 } else {
@@ -44,6 +39,7 @@ app.controller('mainController', function($http, $scope) {
         });
     }
 });
+
 function initMap() {
     new google.maps.Map(document.getElementById('map'), {
         center: {lat: 37.7749, lng: -122.4194},
@@ -54,4 +50,31 @@ function initMap() {
     new google.maps.places.Autocomplete(startInput, {placeIdOnly: true});
     var endInput = document.getElementById('end_location');
     new google.maps.places.Autocomplete(endInput, {placeIdOnly: true});
+}
+
+function setMarkersAndPath(map, placeLst) {
+    var bounds = new google.maps.LatLngBounds();
+    var flightPlanCoordinates = [];
+    for (var i = 0; i < placeLst.length; i++) {
+        var place = placeLst[i];
+        flightPlanCoordinates.push({lat: place[1], lng: place[2]});
+        var latlng = new google.maps.LatLng(place[1], place[2]);
+        var marker = new google.maps.Marker({
+            position: latlng,
+            map: map,
+            title: place[0]
+        });
+        bounds.extend(latlng);
+    }
+    map.fitBounds(bounds);
+
+    var flightPath = new google.maps.Polyline({
+        path: flightPlanCoordinates,
+        geodesic: true,
+        strokeColor: '#db4a00',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+    });
+
+    flightPath.setMap(map);
 }
