@@ -17,6 +17,7 @@ router.get('/route', function(req, res) {
      * @param startLocation [latitude, longitude] list of start location
      * @param endLocation [latitude, longitude] list of destination location
      * @param maxRange number designated
+     * @response
      */
     if (!req.query.range) {
         res.status(400);
@@ -73,7 +74,8 @@ router.get('/route', function(req, res) {
                 for (i = 0; i < body.length; i++) {
                     var dist = haversine(start.location.coordinates[1], body[i].location.coordinates[1],
                         start.location.coordinates[0], body[i].location.coordinates[0]);
-                    if (dist > maxDist) {
+                    // getting farther from destination or can't too far from current place
+                    if (dist > maxDist || start.dist <= body[i].dist) {
                         continue;
                     }
                     if (!minHeur || body[i].dist < minHeur) {
@@ -81,11 +83,16 @@ router.get('/route', function(req, res) {
                         minCoord = body[i];
                     }
                 }
+                // Undefined means no possible routes
+                if (!minCoord) {
+                    res.json('{}');
+                }
                 return minCoord;
             }
 
             var begin = {'location': {
-                    'coordinates': [startLon, startLat]
+                    'coordinates': [startLon, startLat],
+                    'dist': haversine(startLat, endLat, startLon, endLon)
                 }};
             do {
                 var end = greedy(begin);

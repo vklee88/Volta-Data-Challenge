@@ -18,6 +18,11 @@ app.controller('mainController', function($http, $scope) {
                     $http.get('/route?startLocation=' + startCoord + '&endLocation=' + endCoord + '&range=' + maxRange)
                         .then(function (res) {
                             var locations = JSON.parse(res.data);
+                            if (JSON.stringify(locations) === '{}') {
+                                alert('There is no possible route so far between those 2 locations so far, but we ' +
+                                    'hope to have more stations built to make it possible in the future.');
+                                return;
+                            }
                             var map = new google.maps.Map(document.getElementById('map'), {
                                 zoom: 10,
                                 center: {lat: 0, lng: -180},
@@ -25,7 +30,7 @@ app.controller('mainController', function($http, $scope) {
                             });
                             var places = [['Start', startCoord[0], startCoord[1]]];
                             for (var i = 0; i < locations.length; i++) {
-                                places.push([locations[i].name, locations[i].location.coordinates[1], locations[i].location.coordinates[0]])
+                                places.push([locations[i].name, locations[i].location.coordinates[1], locations[i].location.coordinates[0]]);
                             }
                             setMarkersAndPath(map, places);
                         })
@@ -57,7 +62,7 @@ function setMarkersAndPath(map, placeLst) {
     var flightPlanCoordinates = [];
     for (var i = 0; i < placeLst.length; i++) {
         var place = placeLst[i];
-        flightPlanCoordinates.push({lat: place[1], lng: place[2]});
+        flightPlanCoordinates.push({lat: Number(place[1]), lng: Number(place[2])});
         var latlng = new google.maps.LatLng(place[1], place[2]);
         var marker = new google.maps.Marker({
             position: latlng,

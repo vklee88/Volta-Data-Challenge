@@ -14,7 +14,13 @@
     </head>
     <body>
         <div ng-controller="mainController">
-            <h1>Volta Planner</h1>
+            <h1>Volta Trip Planner</h1>
+            <p>This estimates whether you can make it through to your destination, going through Volta charging
+                stations as necessary. To start, enter in your starting and ending locations
+                as well as the range of your electric car.
+                <br/>
+                <i>Disclaimer: the route calculator so far assumes a straight line distance between points, so it'll probably underestimate the travel distance.</i>
+            </p>
             <form ng-submit="planTrip()">
                 <label for="start_location">Start address:</label>
                 <input id="start_location" type="text" required />
